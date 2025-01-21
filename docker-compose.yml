@@ -1,0 +1,42 @@
+x-logging: &logging
+  logging:
+    options:
+      max-size: 10m
+      max-file: "10"
+
+services:
+  moonchain_client_prover:
+    image: us-docker.pkg.dev/mxczkevm/images/moonchain-client:moonchain-geneva
+    restart: always
+    networks:
+     - mxc_node_net
+    env_file:
+      - .env
+    volumes:
+      - ./script:/script
+    entrypoint:
+      - /bin/sh
+      - -c
+      - "/script/start-prover-relayer.sh"
+    depends_on:
+      - moonchain_prover_manager
+    <<: *logging
+
+  moonchain_prover_manager:
+    image: us-docker.pkg.dev/mxczkevm/images/prover-manager:latest
+    restart: always
+    environment:
+      - SERVICE_MODE=PROVER_MANAGER
+      - NODE_ENV=production
+    ports:
+      - 8181:8181
+    networks:
+     - mxc_node_net
+    <<: *logging
+
+networks:
+ mxc_node_net:
+   driver: bridge
+   ipam:
+     config:
+       - subnet: 172.21.0.0/16
