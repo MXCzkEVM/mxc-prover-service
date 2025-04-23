@@ -24,12 +24,40 @@ services:
 
   moonchain_prover_manager:
     image: us-docker.pkg.dev/mxczkevm/images/prover-manager:latest
+#    image: moonchain/prover-manager:local
     restart: always
-    environment:
-      - SERVICE_MODE=PROVER_MANAGER
-      - NODE_ENV=production
+    env_file:
+      - .env
     ports:
       - 8181:8181
+    networks:
+     - mxc_node_net
+    <<: *logging
+
+  mysql:
+    image: mysql:8
+    env_file:
+      - .env
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+    command:
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+      --sql-mode="STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
+    networks:
+     - mxc_node_net
+    <<: *logging
+
+  influxdb:
+    image: influxdb:2.7
+    env_file:
+      - .env
+    volumes:
+      - ./influxdb/config.yml:/etc/influxdb2/config.yml
+      # Data mounting
+      - ./influxdb/data:/var/lib/influxdb2 
     networks:
      - mxc_node_net
     <<: *logging
